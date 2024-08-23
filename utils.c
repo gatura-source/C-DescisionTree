@@ -1,5 +1,5 @@
 #include "main.h"
-
+#include <string.h>
 /**
  * debug - Debugs program output
  * @string- debug message
@@ -44,29 +44,33 @@ void *err_malloc(size_t memsize)
  **/
 int read_line(int fd, char *line_buffer)
 {
-	if (fd != -1)
-	{
-		memset(line_buffer, 0, sizeof(line_buffer));
-		//operations goes around here
-		char char_buffer;
-		int idx;
+    if (fd != -1)
+    {
+        memset(line_buffer, '0', 1024);
+        char char_buffer;
+        int idx = 0;
 
-		idx = 0;
-
-		while (read(fd, &char_buffer, 1) > 0)
-		{
-			if (char_buffer == '\n')
-			{
-				break;
-			}
-			line_buffer[idx++] = char_buffer;
-		}
-		line_buffer[idx] = '\0';
-		//printf("Line buffer: %s\n", line_buffer);
-		return idx;
-	}
-	return -1;
+        while (1)  // Prevent overflow by leaving space for the null terminator
+        {
+            if (read(fd, &char_buffer, 1) < 0)
+            {
+            	printf("DONE\n");
+                break;
+            }
+            if (char_buffer == '\n')
+            {
+                break;
+            }
+            line_buffer[idx] = char_buffer;
+            idx++;
+        }
+        line_buffer[idx] = '\0';
+        //printf("Line buffer: %s\n", line_buffer);
+        return idx;
+    }
+    return -1;
 }
+
 /**
  * read_csv - reads csv files
  * @filepath- filename supplied to the function
@@ -76,21 +80,13 @@ Dataset *read_csv(const char *filepath)
 {
 	int fd;
 	char *key_buffer;
+	char *temp_buffer;
 	char *error_msg;
 	int num_labels;
-	char **labels;
 	char *token;
 	Dataset *Ds;
 
-
-
-	
-	num_labels = 0;
-	
-	Ds = (Dataset *)err_malloc(sizeof(Dataset));
-	Ds->l_abels = (Labels * )err_malloc(sizeof(Labels));
-	Ds->ex = (Examples *)err_malloc(sizeof(Examples));
-	//open file
+	//try opening file
 	fd = open(filepath, O_RDONLY);
 	if (fd == -1)
 	{
@@ -102,24 +98,36 @@ Dataset *read_csv(const char *filepath)
 		exit(EXIT_FAILURE);
 
 	}
+	//Initalize Dataset
+	Ds = (Dataset *)err_malloc(sizeof(Ds));
+	if(Ds == NULL)
+	{
+		exit(EXIT_FAILURE);
+	}
+
+	//add file descriptor to Ds
 	Ds->file_descriptor = fd;
-	//read the first line
+
+	//get the labels from the first line of the file
+	num_labels = 0;
+
 	//allocate buffer for the keys
 	key_buffer = (char *)err_malloc(sizeof(char) * 1024);
 	if (key_buffer == NULL)
 	{
+		free(Ds);
+		close(fd);
 		exit(EXIT_FAILURE);
 	}
 	if (read_line(fd, key_buffer) == -1)
 	{
+		free(Ds);
 		free(key_buffer);
 		exit(EXIT_FAILURE);
 	}
-	//printf("Keys: %s\n", key_buffer);
-	//free(key_buffer);
 
 	//get number of labels
-	char *temp_buffer = key_buffer;
+	temp_buffer = key_buffer;
 	while(*temp_buffer != '\0')
 	{
 		if (*temp_buffer == ',')
@@ -129,81 +137,112 @@ Dataset *read_csv(const char *filepath)
 		temp_buffer++;
 	}
 	num_labels++;
+	
+	//add number of labels to the Ds
+	Ds->n_labels = num_labels;
 
-	Ds->l_abels->num_labels = num_labels;
-	Ds->l_abels->labels = (char **)err_malloc(num_labels * sizeof(char *));
-	if (Ds->l_abels->labels == NULL)
+	//Now getting the labels
+	Ds->label_s = (char **)err_malloc(num_labels * sizeof(char *));
+	if (Ds->label_s == NULL)
 	{
-		free(Ds->l_abels);
 		free(key_buffer);
+		free(Ds);
 		close(fd);
 		exit(EXIT_FAILURE);
 	}
-	//printf("Keys again: %s\n", key_buffer);
+
+	//initalize tokenizer
 	token = strtok(key_buffer, CSV_DELIMITER);
-	//printf("Token: %s\n", key_buffer);
 
 	/*Get the labels*/
 	for (int j = 0; j < num_labels; j++)
 	{
 		if (token != NULL)
 		{
-			//printf("Token: %s\n", key_buffer);
-			Ds->l_abels->labels[j] = strdup(token);
-			//printf("T: %s - Idx: %d\n", token, j);
+			Ds->label_s[j] = (char *)err_malloc(20 * sizeof(char));
+			if (!Ds->label_s[j])
+			{
+				while(j >= 0)
+				{
+					free(Ds->label_s[j]);
+					j--;
+				}
+				free(Ds->label_s);
+				free(Ds);
+				free(key_buffer);
+				close(fd);
+				exit(EXIT_FAILURE);
+			}
+			snprintf(Ds->label_s[j], 20, "%s", token);
 			token = strtok(NULL, CSV_DELIMITER);
 		}
 		
 
 	}
-	//allocate mem for each row in table
-	for (int table = 0; table < TABLE_SIZE; table++)
+	
+	//count the lines
+	int line_count = 0;
+	while(1)
 	{
-		//Ds->ex->table[table] = (example **)err_malloc(sizeof(example));
-		Ds->ex->table[table] = (char **)err_malloc(sizeof(char *) * num_labels);
-		if (Ds->ex->table[table] == NULL)
-		{
-			//free labels
-			free(Ds->l_abels->labels);
-			free(Ds->l_abels);
-			free(Ds);
-			for (int t = 0; t < table; t++)
-			{
-				free(Ds->ex->table[t]);
-			}
-			exit(EXIT_FAILURE);
-		}
-		if (Ds->ex->table[table] == NULL)
-		{
-			for (int i = 0; i <= table; i++)
-			{
-				free(Ds->ex->table[i]);
-			}
-			exit(EXIT_FAILURE);
-		}
-		//read lines
-		if (read_line(fd, key_buffer) != -1)
-		{
-			token = strtok(key_buffer, CSV_DELIMITER);
-			for (int y = 0; y < num_labels; y++)
-			{
-				if(token == NULL)
-				{
-					Ds->ex->table[table][y] = (char *)strdup(" ");
-				}
-				else
-				{
-					Ds->ex->table[table][y] = (char *)strdup(token);
-				}
-				token = strtok(NULL, CSV_DELIMITER);
-			}
-		}
-		else
+		if (read_line(fd, key_buffer) <= 0)
 		{
 			break;
 		}
-		
+		line_count++;
+		//printf("%d\n", line_count);
 	}
+	//printf("SIGSEGV");
+	//Get examples
+	Ds->example_s = (char ***)err_malloc(line_count * sizeof(char **));
+	//printf("SIGSEGV");
+	if (Ds->example_s == NULL)
+	{
+		//free
+	}
+	Ds->n_examples = line_count;
+	//rewind file pointer
+	//printf("rewind");
+	lseek(fd, 0, SEEK_SET);
+	read_line(fd, key_buffer);
+	for(int i = 0; i < line_count; i++)
+	{
+		Ds->example_s[i] = (char **)err_malloc(num_labels * sizeof(char *));
+		if (Ds->example_s[i] == NULL)
+		{
+			//free
+		}
+	}
+	for(int i = 0; i < line_count; i++)
+	{
+		int idx = 0;
+
+		if (read_line(fd, key_buffer) != -1)
+		{
+			token = strtok(key_buffer, CSV_DELIMITER);
+			while(token != NULL)
+			{
+				Ds->example_s[i][idx] = (char *)err_malloc(sizeof(char) * 128);
+				if (Ds->example_s[i][idx] == NULL)
+				{
+					//free
+				}
+				if (strlen(token) == 0)
+				{
+					strcpy(token, " ");
+				}
+				printf("Token: %s\n", (token));
+				// strcpy(Ds->example_s[i][idx], token);
+				//Ds->example_s[i][idx] = strdup(token);
+				snprintf(Ds->example_s[i][idx], strlen(token)+1, "%s", token);
+				printf("T: %s\n", Ds->example_s[i][idx]);
+				idx++;
+				token = strtok(NULL, CSV_DELIMITER);
+				//printf("Inifnite\n");
+			}
+		}
+	}
+
+
 	return Ds;
 }
 

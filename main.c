@@ -10,34 +10,23 @@ int main(int argc, char const *argv[])
 		exit(EXIT_FAILURE);
 	}
 	Dataset *csv_fd;
-	char *buffer;
 
 	csv_fd = (Dataset *)err_malloc(sizeof(Dataset));
 
 	//printf("Implementing the CART learning algoithm in C\n\n");
 	csv_fd = read_csv(argv[1]);
-	
-	
-	//the labels
-	for (int i = 0; i  < csv_fd->l_abels->num_labels; i++)
-	{
-		printf("|%s\t",csv_fd->l_abels->labels[i]);
-	}
-	printf("|\n");
-	for (int i = 0; i < TABLE_SIZE; i++)
-	{
-		if (csv_fd->ex->table[i][0] != NULL)
-		{
-			for (int j = 0; j < csv_fd->l_abels->num_labels; j++)
-			{
-				printf("|%s\t", csv_fd->ex->table[i][j]);
-			}
-		}
-		else
-		{
-			break;
-		}
-		printf("\n");
-	}
+    // Use the dataset
+    printf("Labels:\n");
+    for (int i = 0; i < csv_fd->n_labels; i++) {
+        printf("%s\t", csv_fd->label_s[i]);
+    }
+    printf("\nNo. labels: %d\nsamples:\n", csv_fd->n_labels);
+    for (int i = 0; i < csv_fd->n_examples; i++) {
+    	for (int j = 0; j < csv_fd->n_labels; j++)
+    	{
+        	printf("%s\t", csv_fd->example_s[i][2]);
+        }
+    }
+    
 	return 0;
 }

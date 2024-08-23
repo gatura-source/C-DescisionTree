@@ -5,7 +5,8 @@
 #define MIN_SAMPLES 2
 #define SET_ERROR_BUFFER_SIZE 128
 #define CSV_DELIMITER ","
-#define TABLE_SIZE 10
+#define SET_TABLE_SIZE 100
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,29 +33,13 @@ typedef struct TreeNode
 	
 } TreeNode;
 
-typedef struct example
-{
-	char **sample;
-} example;
-
-typedef struct Examples
-{
-	example **table[TABLE_SIZE];
-} Examples;
-
-
-
-typedef struct Labels
-{
-	int num_labels;
-	char **labels;
-}Labels;
-
 typedef struct Dataset
 {
 	int file_descriptor;
-	Labels *l_abels;
-	Examples *ex;
+	int n_labels;
+	int n_examples;
+	char **label_s; //pointer to type Labels
+	char ***example_s; //pointer to type Example
 } Dataset;
 
 Dataset *read_csv(const char *filepath);
