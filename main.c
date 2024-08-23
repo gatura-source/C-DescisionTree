@@ -14,28 +14,30 @@ int main(int argc, char const *argv[])
 
 	csv_fd = (Dataset *)err_malloc(sizeof(Dataset));
 
-	printf("Implementing the CART learning algoithm in C\n\n");
+	//printf("Implementing the CART learning algoithm in C\n\n");
 	csv_fd = read_csv(argv[1]);
 	
-	//file desc
-	printf("The file descriptor = %d\n", csv_fd->file_descriptor);
-	//The number labels
-	printf("The number of labels: %d\n", csv_fd->l_abels->num_labels);
 	
 	//the labels
-	printf("The labels: \n");
 	for (int i = 0; i  < csv_fd->l_abels->num_labels; i++)
 	{
-		printf("Label %d : %s\n",i, csv_fd->l_abels->labels[i]);
+		printf("|%s\t",csv_fd->l_abels->labels[i]);
 	}
-	//examples
+	printf("|\n");
 	for (int i = 0; i < TABLE_SIZE; i++)
 	{
 		if (csv_fd->ex->table[i][0] != NULL)
 		{
-			printf("Length: %d\n", strlen(csv_fd->ex->table[i]));
-			printf("Sample %d -> %s\n", i, csv_fd->ex->table[i][0]);
+			for (int j = 0; j < csv_fd->l_abels->num_labels; j++)
+			{
+				printf("|%s\t", csv_fd->ex->table[i][j]);
+			}
 		}
+		else
+		{
+			break;
+		}
+		printf("\n");
 	}
 	return 0;
 }

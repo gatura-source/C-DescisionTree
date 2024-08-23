@@ -131,7 +131,7 @@ Dataset *read_csv(const char *filepath)
 	num_labels++;
 
 	Ds->l_abels->num_labels = num_labels;
-	Ds->l_abels->labels = (char **)err_malloc(num_labels * sizeof(char **));
+	Ds->l_abels->labels = (char **)err_malloc(num_labels * sizeof(char *));
 	if (Ds->l_abels->labels == NULL)
 	{
 		free(Ds->l_abels);
@@ -159,7 +159,8 @@ Dataset *read_csv(const char *filepath)
 	//allocate mem for each row in table
 	for (int table = 0; table < TABLE_SIZE; table++)
 	{
-		Ds->ex->table[table] = (example **)err_malloc(sizeof(example));
+		//Ds->ex->table[table] = (example **)err_malloc(sizeof(example));
+		Ds->ex->table[table] = (char **)err_malloc(sizeof(char *) * num_labels);
 		if (Ds->ex->table[table] == NULL)
 		{
 			//free labels
@@ -172,7 +173,6 @@ Dataset *read_csv(const char *filepath)
 			}
 			exit(EXIT_FAILURE);
 		}
-		Ds->ex->table[table] = (example **)err_malloc(sizeof(char *) * 3);
 		if (Ds->ex->table[table] == NULL)
 		{
 			for (int i = 0; i <= table; i++)
@@ -185,17 +185,18 @@ Dataset *read_csv(const char *filepath)
 		if (read_line(fd, key_buffer) != -1)
 		{
 			token = strtok(key_buffer, CSV_DELIMITER);
-			int idx_counter = 0;
-			//printf("IDx: %d\n", table);
-			while (token != NULL)
+			for (int y = 0; y < num_labels; y++)
 			{
-				printf("Idx: %d\n", table);
-				example *ex = (example *)strdup(token);
-				Ds->ex->table[table][idx_counter] = ex;
-				idx_counter++;
+				if(token == NULL)
+				{
+					Ds->ex->table[table][y] = (char *)strdup(" ");
+				}
+				else
+				{
+					Ds->ex->table[table][y] = (char *)strdup(token);
+				}
 				token = strtok(NULL, CSV_DELIMITER);
 			}
-
 		}
 		else
 		{
