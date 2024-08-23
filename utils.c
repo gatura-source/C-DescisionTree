@@ -62,7 +62,7 @@ int read_line(int fd, char *line_buffer)
 			line_buffer[idx++] = char_buffer;
 		}
 		line_buffer[idx] = '\0';
-		printf("Line buffer: %s\n", line_buffer);
+		//printf("Line buffer: %s\n", line_buffer);
 		return idx;
 	}
 	return -1;
@@ -129,7 +129,7 @@ Dataset *read_csv(const char *filepath)
 		temp_buffer++;
 	}
 	num_labels++;
-	
+
 	Ds->l_abels->num_labels = num_labels;
 	Ds->l_abels->labels = (char **)err_malloc(num_labels * sizeof(char **));
 	if (Ds->l_abels->labels == NULL)
@@ -156,14 +156,53 @@ Dataset *read_csv(const char *filepath)
 		
 
 	}
-	//get the examples
-	while (read_line(fd, key_buffer) != -1)
+	//allocate mem for each row in table
+	for (int table = 0; table < TABLE_SIZE; table++)
 	{
-		token = strtok(key_buffer);
+		Ds->ex->table[table] = (example **)err_malloc(sizeof(example));
+		if (Ds->ex->table[table] == NULL)
+		{
+			//free labels
+			free(Ds->l_abels->labels);
+			free(Ds->l_abels);
+			free(Ds);
+			for (int t = 0; t < table; t++)
+			{
+				free(Ds->ex->table[t]);
+			}
+			exit(EXIT_FAILURE);
+		}
+		Ds->ex->table[table] = (example **)err_malloc(sizeof(char *) * 3);
+		if (Ds->ex->table[table] == NULL)
+		{
+			for (int i = 0; i <= table; i++)
+			{
+				free(Ds->ex->table[i]);
+			}
+			exit(EXIT_FAILURE);
+		}
+		//read lines
+		if (read_line(fd, key_buffer) != -1)
+		{
+			token = strtok(key_buffer, CSV_DELIMITER);
+			int idx_counter = 0;
+			//printf("IDx: %d\n", table);
+			while (token != NULL)
+			{
+				printf("Idx: %d\n", table);
+				example *ex = (example *)strdup(token);
+				Ds->ex->table[table][idx_counter] = ex;
+				idx_counter++;
+				token = strtok(NULL, CSV_DELIMITER);
+			}
 
-
+		}
+		else
+		{
+			break;
+		}
+		
 	}
-
 	return Ds;
 }
 

@@ -1,6 +1,14 @@
 #include "main.h"
 int main(int argc, char const *argv[])
 {
+	if((argc) < 2)
+	{
+		char *err_msg = (char *)err_malloc(SET_ERROR_BUFFER_SIZE * sizeof(char));
+		snprintf(err_msg, SET_ERROR_BUFFER_SIZE, "Supply filename: %s filename\n", argv[0]);
+		debug(err_msg, 3);
+		free(err_msg);
+		exit(EXIT_FAILURE);
+	}
 	Dataset *csv_fd;
 	char *buffer;
 
@@ -19,6 +27,15 @@ int main(int argc, char const *argv[])
 	for (int i = 0; i  < csv_fd->l_abels->num_labels; i++)
 	{
 		printf("Label %d : %s\n",i, csv_fd->l_abels->labels[i]);
+	}
+	//examples
+	for (int i = 0; i < TABLE_SIZE; i++)
+	{
+		if (csv_fd->ex->table[i][0] != NULL)
+		{
+			printf("Length: %d\n", strlen(csv_fd->ex->table[i]));
+			printf("Sample %d -> %s\n", i, csv_fd->ex->table[i][0]);
+		}
 	}
 	return 0;
 }
