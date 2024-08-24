@@ -228,16 +228,16 @@ Dataset *read_csv(const char *filepath)
 				}
 				if (strlen(token) == 0)
 				{
-					strcpy(token, " ");
+					snprintf(Ds->example_s[i][idx], strlen(PLACEHOLDER) + 1, "%s", PLACEHOLDER);
+					idx++;
+					token = strtok(NULL, CSV_DELIMITER);
 				}
-				printf("Token: %s\n", (token));
-				// strcpy(Ds->example_s[i][idx], token);
-				//Ds->example_s[i][idx] = strdup(token);
-				snprintf(Ds->example_s[i][idx], strlen(token)+1, "%s", token);
-				printf("T: %s\n", Ds->example_s[i][idx]);
-				idx++;
-				token = strtok(NULL, CSV_DELIMITER);
-				//printf("Inifnite\n");
+				else
+				{
+					snprintf(Ds->example_s[i][idx], strlen(token)+1, "%s", token);
+					idx++;
+					token = strtok(NULL, CSV_DELIMITER);
+				}
 			}
 		}
 	}
@@ -254,4 +254,17 @@ Dataset *read_csv(const char *filepath)
 off_t get_current_pos(int fd)
 {
 	return lseek(fd, 0, SEEK_CUR);
+}
+/**
+ * print_separator - rows separator
+ * collen - column length
+ **/
+void print_separator(int collen) {
+    for (int i = 0; i < collen; i++) {
+        printf("+");
+        for (int j = 0; j < COLUMN_WIDTH; j++) {
+            printf("-");
+        }
+    }
+    printf("+\n");
 }

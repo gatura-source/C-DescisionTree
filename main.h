@@ -6,6 +6,9 @@
 #define SET_ERROR_BUFFER_SIZE 128
 #define CSV_DELIMITER ","
 #define SET_TABLE_SIZE 100
+#define COLUMN_WIDTH 20
+#define PLACEHOLDER "(null)"  // Define a placeholder for missing values
+
 
 
 #include <stdio.h>
@@ -51,6 +54,7 @@ float entropy();
 int predict();
 void debug(char*, int);
 off_t get_current_pos(int);
+void print_separator(int collen);
 
 
 #endif
