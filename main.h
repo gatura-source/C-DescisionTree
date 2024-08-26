@@ -55,6 +55,7 @@ int predict();
 void debug(char*, int);
 off_t get_current_pos(int);
 void print_separator(int collen);
+void free_dataset(Dataset *dataset);
 
 
 #endif

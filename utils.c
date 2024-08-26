@@ -9,13 +9,13 @@ void debug(char *string, int symbol)
 {
 	switch(symbol){
 	case 1:
-		printf("[FILE IO ERROR: %s]", string);
+		printf("[FILE IO ERROR: %s]\n", string);
 		break;
 	case 2:
-		printf("[MEM ERROR: %s]", string);
+		printf("[MEM ERROR: %s]\n", string);
 		break;
 	default:
-		printf("[ERROR: %s]", string);
+		printf("[ERROR: %s]\n", string);
 		break;
 	}
 	
@@ -44,31 +44,38 @@ void *err_malloc(size_t memsize)
  **/
 int read_line(int fd, char *line_buffer)
 {
-    if (fd != -1)
-    {
-        memset(line_buffer, '0', 1024);
-        char char_buffer;
-        int idx = 0;
+    if (fd == -1)
+        return -1;
 
-        while (1)  // Prevent overflow by leaving space for the null terminator
+    memset(line_buffer, 0, 1025);
+    char char_buffer;
+    int idx = 0;
+    ssize_t bytes_read;
+
+    while (idx < 1024)  // Prevent overflow by leaving space for the null terminator
+    {
+        bytes_read = read(fd, &char_buffer, 1);
+        if (bytes_read == -1)
         {
-            if (read(fd, &char_buffer, 1) < 0)
-            {
-            	printf("DONE\n");
-                break;
-            }
-            if (char_buffer == '\n')
-            {
-                break;
-            }
-            line_buffer[idx] = char_buffer;
-            idx++;
+            // Handle error
+            perror("read");
+            return -1;
         }
-        line_buffer[idx] = '\0';
-        //printf("Line buffer: %s\n", line_buffer);
-        return idx;
+        else if (bytes_read == 0)
+        {
+            // End of file
+            break;
+        }
+
+        if (char_buffer == '\n')
+        {
+            break;
+        }
+        line_buffer[idx] = char_buffer;
+        idx++;
     }
-    return -1;
+    line_buffer[idx] = '\0';
+    return idx;
 }
 
 /**
@@ -99,7 +106,7 @@ Dataset *read_csv(const char *filepath)
 
 	}
 	//Initalize Dataset
-	Ds = (Dataset *)err_malloc(sizeof(Ds));
+	Ds = (Dataset *)err_malloc(sizeof(Dataset));
 	if(Ds == NULL)
 	{
 		exit(EXIT_FAILURE);
@@ -112,7 +119,7 @@ Dataset *read_csv(const char *filepath)
 	num_labels = 0;
 
 	//allocate buffer for the keys
-	key_buffer = (char *)err_malloc(sizeof(char) * 1024);
+	key_buffer = (char *)err_malloc(1 + (sizeof(char) * 1024));
 	if (key_buffer == NULL)
 	{
 		free(Ds);
@@ -142,7 +149,7 @@ Dataset *read_csv(const char *filepath)
 	Ds->n_labels = num_labels;
 
 	//Now getting the labels
-	Ds->label_s = (char **)err_malloc(num_labels * sizeof(char *));
+	Ds->label_s = (char **)err_malloc(1 + num_labels * sizeof(char *));
 	if (Ds->label_s == NULL)
 	{
 		free(key_buffer);
@@ -206,7 +213,7 @@ Dataset *read_csv(const char *filepath)
 	read_line(fd, key_buffer);
 	for(int i = 0; i < line_count; i++)
 	{
-		Ds->example_s[i] = (char **)err_malloc(num_labels * sizeof(char *));
+		Ds->example_s[i] = (char **)err_malloc((num_labels * sizeof(char *)));
 		if (Ds->example_s[i] == NULL)
 		{
 			//free
@@ -219,9 +226,10 @@ Dataset *read_csv(const char *filepath)
 		if (read_line(fd, key_buffer) != -1)
 		{
 			token = strtok(key_buffer, CSV_DELIMITER);
-			while(token != NULL)
+			while(token != NULL && idx < num_labels)
 			{
-				Ds->example_s[i][idx] = (char *)err_malloc(sizeof(char) * 128);
+
+				Ds->example_s[i][idx] = (char *)err_malloc((sizeof(char) * 128));
 				if (Ds->example_s[i][idx] == NULL)
 				{
 					//free
@@ -229,7 +237,7 @@ Dataset *read_csv(const char *filepath)
 				if (strlen(token) == 0)
 				{
 					snprintf(Ds->example_s[i][idx], strlen(PLACEHOLDER) + 1, "%s", PLACEHOLDER);
-					idx++;
+					// idx++;
 					token = strtok(NULL, CSV_DELIMITER);
 				}
 				else
@@ -238,9 +246,12 @@ Dataset *read_csv(const char *filepath)
 					idx++;
 					token = strtok(NULL, CSV_DELIMITER);
 				}
+				
 			}
 		}
 	}
+	free(key_buffer);
+
 
 
 	return Ds;
@@ -257,7 +268,7 @@ off_t get_current_pos(int fd)
 }
 /**
  * print_separator - rows separator
- * collen - column length
+ * @collen - column length
  **/
 void print_separator(int collen) {
     for (int i = 0; i < collen; i++) {
@@ -267,4 +278,36 @@ void print_separator(int collen) {
         }
     }
     printf("+\n");
+}
+
+/**
+ * free_dataset - free Dataset type
+ * @dataset - Dataset to free
+ * Returns: void
+ **/
+void free_dataset(Dataset *dataset) {
+    if (dataset == NULL) {
+        return;
+    }
+
+    // Free each label string
+    for (int i = 0; i < dataset->n_labels; i++) {
+        free(dataset->label_s[i]);
+    }
+    // Free the array of labels
+    free(dataset->label_s);
+
+    // Free each example (each example is an array of strings)
+    for (int i = 0; i < dataset->n_examples; i++) {
+        for (int j = 0; j < dataset->n_labels; j++) {
+            free(dataset->example_s[i][j]);
+        }
+        // Free the array of strings for each example
+        free(dataset->example_s[i]);
+    }
+    // Free the array of examples
+    free(dataset->example_s);
+
+    // Finally, free the dataset structure itself
+    free(dataset);
 }
