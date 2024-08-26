@@ -67,7 +67,6 @@ int main(int argc, char const *argv[])
     	printf("|\n");
     	print_separator(collen);
     }
-    printf("Size of Ds: %ld\n", sizeof(csv_fd->n_labels));
     free_dataset(csv_fd);
 	return 0;
 }
