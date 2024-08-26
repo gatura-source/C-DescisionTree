@@ -1,0 +1,6 @@
+# Ignore all object files
+*.o
+# Ignore all .csv sample files
+*.csv
+#ignore sample generator
+.py
