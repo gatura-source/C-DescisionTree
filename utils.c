@@ -22,6 +22,39 @@ void debug(char *string, int symbol)
 }
 
 /**
+ * free_dataset - free Dataset type
+ * @dataset - Dataset to free
+ * Returns: void
+ **/
+void free_dataset(Dataset *dataset) {
+    if (dataset == NULL) {
+        return;
+    }
+
+    // Free each label string
+    for (int i = 0; i < dataset->n_labels; i++) {
+        free(dataset->label_s[i]);
+    }
+    // Free the array of labels
+    free(dataset->label_s);
+
+    // Free each example (each example is an array of strings)
+    for (int i = 0; i < dataset->n_examples; i++) {
+        for (int j = 0; j < dataset->n_labels; j++) {
+            free(dataset->example_s[i][j]);
+        }
+        // Free the array of strings for each example
+        free(dataset->example_s[i]);
+    }
+    // Free the array of examples
+    free(dataset->example_s);
+
+    // Finally, free the dataset structure itself
+    free(dataset);
+}
+
+
+/**
  * err_malloc - error checking malloc
  * @memsize: memory size to allocate
  **/
@@ -122,13 +155,15 @@ Dataset *read_csv(const char *filepath)
 	key_buffer = (char *)err_malloc(1 + (sizeof(char) * 1024));
 	if (key_buffer == NULL)
 	{
-		free(Ds);
+		free_dataset(Ds);
+		// free(Ds);
 		close(fd);
 		exit(EXIT_FAILURE);
 	}
 	if (read_line(fd, key_buffer) == -1)
 	{
-		free(Ds);
+		free_dataset(Ds);
+		// free(Ds);
 		free(key_buffer);
 		exit(EXIT_FAILURE);
 	}
@@ -153,7 +188,7 @@ Dataset *read_csv(const char *filepath)
 	if (Ds->label_s == NULL)
 	{
 		free(key_buffer);
-		free(Ds);
+		free_dataset(Ds);
 		close(fd);
 		exit(EXIT_FAILURE);
 	}
@@ -280,34 +315,3 @@ void print_separator(int collen) {
     printf("+\n");
 }
 
-/**
- * free_dataset - free Dataset type
- * @dataset - Dataset to free
- * Returns: void
- **/
-void free_dataset(Dataset *dataset) {
-    if (dataset == NULL) {
-        return;
-    }
-
-    // Free each label string
-    for (int i = 0; i < dataset->n_labels; i++) {
-        free(dataset->label_s[i]);
-    }
-    // Free the array of labels
-    free(dataset->label_s);
-
-    // Free each example (each example is an array of strings)
-    for (int i = 0; i < dataset->n_examples; i++) {
-        for (int j = 0; j < dataset->n_labels; j++) {
-            free(dataset->example_s[i][j]);
-        }
-        // Free the array of strings for each example
-        free(dataset->example_s[i]);
-    }
-    // Free the array of examples
-    free(dataset->example_s);
-
-    // Finally, free the dataset structure itself
-    free(dataset);
-}
