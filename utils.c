@@ -16,7 +16,6 @@ void debug(char *string, int symbol)
 		break;
 	default:
 		printf("[ERROR: %s]\n", string);
-		break;
 	}
 	
 }
@@ -38,6 +37,8 @@ void free_dataset(Dataset *dataset) {
     // Free the array of labels
     free(dataset->label_s);
 
+    //close the file
+    close(dataset->file_descriptor);
     // Free each example (each example is an array of strings)
     for (int i = 0; i < dataset->n_examples; i++) {
         for (int j = 0; j < dataset->n_labels; j++) {
@@ -125,6 +126,7 @@ Dataset *read_csv(const char *filepath)
 	int num_labels;
 	char *token;
 	Dataset *Ds;
+	Token tokenizer;
 
 	//try opening file
 	fd = open(filepath, O_RDONLY);
@@ -157,7 +159,6 @@ Dataset *read_csv(const char *filepath)
 	{
 		free_dataset(Ds);
 		// free(Ds);
-		close(fd);
 		exit(EXIT_FAILURE);
 	}
 	if (read_line(fd, key_buffer) == -1)
@@ -189,7 +190,6 @@ Dataset *read_csv(const char *filepath)
 	{
 		free(key_buffer);
 		free_dataset(Ds);
-		close(fd);
 		exit(EXIT_FAILURE);
 	}
 
@@ -204,15 +204,7 @@ Dataset *read_csv(const char *filepath)
 			Ds->label_s[j] = (char *)err_malloc(20 * sizeof(char));
 			if (!Ds->label_s[j])
 			{
-				while(j >= 0)
-				{
-					free(Ds->label_s[j]);
-					j--;
-				}
-				free(Ds->label_s);
-				free(Ds);
-				free(key_buffer);
-				close(fd);
+				free_dataset(Ds);
 				exit(EXIT_FAILURE);
 			}
 			snprintf(Ds->label_s[j], 20, "%s", token);
@@ -252,6 +244,8 @@ Dataset *read_csv(const char *filepath)
 		if (Ds->example_s[i] == NULL)
 		{
 			//free
+			free(Ds);
+			exit(EXIT_FAILURE);
 		}
 	}
 	for(int i = 0; i < line_count; i++)
@@ -260,35 +254,36 @@ Dataset *read_csv(const char *filepath)
 
 		if (read_line(fd, key_buffer) != -1)
 		{
-			token = strtok(key_buffer, CSV_DELIMITER);
-			while(token != NULL && idx < num_labels)
+			tokenizer.input_str = key_buffer;
+			tokenizer.delimiter = ',';
+			tokenizer.pos = 0;
+			tokenizer.next = next;
+			while( (token = tokenizer.next(&tokenizer)) != NULL && idx < num_labels)
 			{
 
-				Ds->example_s[i][idx] = (char *)err_malloc((sizeof(char) * 128));
+				Ds->example_s[i][idx] = (char *)err_malloc((sizeof(char) * (TOKEN_SIZE)));
 				if (Ds->example_s[i][idx] == NULL)
 				{
 					//free
+					free_dataset(Ds);
+					exit(EXIT_FAILURE);
 				}
-				if (strlen(token) == 0)
+				if (strlen(token) == 1)
 				{
-					snprintf(Ds->example_s[i][idx], strlen(PLACEHOLDER) + 1, "%s", PLACEHOLDER);
-					// idx++;
-					token = strtok(NULL, CSV_DELIMITER);
+					snprintf(Ds->example_s[i][idx], strlen(PLACEHOLDER)+1, "%s", PLACEHOLDER);
 				}
 				else
 				{
 					snprintf(Ds->example_s[i][idx], strlen(token)+1, "%s", token);
-					idx++;
-					token = strtok(NULL, CSV_DELIMITER);
 				}
-				
+				free(token);
+				idx++;
 			}
+			//printf("IDX: %d\n", idx);
 		}
 	}
+	;
 	free(key_buffer);
-
-
-
 	return Ds;
 }
 

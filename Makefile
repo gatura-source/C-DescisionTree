@@ -8,7 +8,7 @@ CFLAGS = -Wall -Wextra -std=c99 -g
 TARGET = cart
 
 # Source files
-SRCS = main.c utils.c
+SRCS = main.c utils.c tokenizer.c
 
 # Object files (derived from source files)
 OBJS = $(SRCS:.c=.o)

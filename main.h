@@ -8,6 +8,7 @@
 #define SET_TABLE_SIZE 100
 #define COLUMN_WIDTH 20
 #define PLACEHOLDER "(null)"  // Define a placeholder for missing values
+#define TOKEN_SIZE 32
 
 
 
@@ -45,6 +46,14 @@ typedef struct Dataset
 	char ***example_s; //pointer to type Example
 } Dataset;
 
+typedef struct Token {
+    int pos;          // Position of the token in the original string
+    char delimiter;
+    char *input_str;      // The actual token (substring)
+    char *(*next)(struct Token *); //next function
+} Token;
+
+char *next(Token *token);
 Dataset *read_csv(const char *filepath);
 int read_json(char *filename);
 void *err_malloc(size_t);
@@ -56,6 +65,7 @@ void debug(char*, int);
 off_t get_current_pos(int);
 void print_separator(int collen);
 void free_dataset(Dataset *dataset);
+void parse_csv_entry(char *entry, char **output, int num_labels);
 
 
 #endif

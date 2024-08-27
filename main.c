@@ -4,7 +4,7 @@ int main(int argc, char const *argv[])
 	if((argc) < 2)
 	{
 		char *err_msg = (char *)err_malloc(SET_ERROR_BUFFER_SIZE * sizeof(char));
-		snprintf(err_msg, SET_ERROR_BUFFER_SIZE, "Supply filename: %s <filename> <cols> <rows>\n ", argv[0]);
+		snprintf(err_msg, SET_ERROR_BUFFER_SIZE, "Supply filename: %s <filename> <cols> <rows> ", argv[0]);
 		debug(err_msg, 3);
 		free(err_msg);
 		exit(EXIT_FAILURE);
